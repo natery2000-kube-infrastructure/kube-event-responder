@@ -1,4 +1,4 @@
-module github.com/natery2000-kube-infrastructure/kube-event-responder
+module github.com/natery2000-kube-infrastructure/kube-event-responder 
 
 go 1.17
 
