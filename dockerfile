@@ -1,6 +1,12 @@
-FROM golang:1.17.1-alpine3.14
+FROM golang:1.17-alpine as build
 
-RUN GOPROXY=direct
-RUN go install github.com/natery2000-kube-infrastructure/kube-event-responder@latest
+WORKDIR /
+COPY . .
+
+RUN go build
+
+FROM scratch
+
+COPY --from=build /kube-event-responder /kube-event-responder
 
 CMD ["kube-event-responder", "run"]
