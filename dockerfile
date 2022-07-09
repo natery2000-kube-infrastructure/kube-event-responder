@@ -5,7 +5,7 @@ COPY . .
 
 RUN go build
 
-FROM scratch
+FROM alpine
 
 COPY --from=build /kube-event-responder /kube-event-responder
 
