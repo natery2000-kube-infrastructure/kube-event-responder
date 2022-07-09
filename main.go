@@ -2,13 +2,11 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	api_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -91,8 +89,8 @@ func main() {
 
 	stopCh := make(chan struct{})
 	defer close(stopCh)
-	go informer.Run(stopCh)
+	informer.Run(stopCh)
 
-	wait.Until(nil, time.Second, stopCh)
+	//wait.Until(nil, time.Second, stopCh)
 	//}
 }
