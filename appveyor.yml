@@ -10,4 +10,4 @@ build_script:
   - sh: echo $CONTAINER_VERSION
   - sh: docker build -t $CONTAINER_VERSION .
   - sh: docker push $CONTAINER_VERSION
-test: off
+test: off 
