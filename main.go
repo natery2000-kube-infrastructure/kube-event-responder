@@ -23,11 +23,7 @@ type Config struct {
 type Event struct {
 	key          string
 	eventType    string
-	namespace    string
 	resourceType string
-	apiVersion   string
-	obj          runtime.Object
-	oldObj       runtime.Object
 }
 
 func main() {
@@ -64,8 +60,6 @@ func main() {
 			newEvent.key, err = cache.MetaNamespaceKeyFunc(obj)
 			newEvent.eventType = "create"
 			newEvent.resourceType = "configMap"
-			newEvent.apiVersion = "V1"
-			newEvent.obj = obj.(runtime.Object)
 			fmt.Println(newEvent)
 		},
 		UpdateFunc: func(old, new interface{}) {
@@ -73,8 +67,6 @@ func main() {
 			newEvent.key, err = cache.MetaNamespaceKeyFunc(old)
 			newEvent.eventType = "update"
 			newEvent.resourceType = "configMap"
-			newEvent.apiVersion = "V1"
-			newEvent.obj = new.(runtime.Object)
 			fmt.Println(newEvent)
 		},
 		DeleteFunc: func(obj interface{}) {
@@ -82,8 +74,6 @@ func main() {
 			newEvent.key, err = cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 			newEvent.eventType = "delete"
 			newEvent.resourceType = "configMap"
-			newEvent.apiVersion = "V1"
-			newEvent.obj = obj.(runtime.Object)
 			fmt.Println(newEvent)
 		},
 	})
