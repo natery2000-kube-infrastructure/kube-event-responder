@@ -37,8 +37,8 @@ func main() {
 	kubectlCommandHandler := KubectlCommandHandler{
 		command: "kubectl get pods",
 		HandlerBase: HandlerBase{
-			action:       "Update",
-			resourceName: "ConfigMap/streaming-couchdb-configmap",
+			action:       "update",
+			resourceName: "default/streaming-couchdb-configmap",
 		},
 	}
 	handlers = append(handlers, kubectlCommandHandler)
@@ -46,8 +46,8 @@ func main() {
 	printlnHandler := PrintlnHandler{
 		printString: "hello world",
 		HandlerBase: HandlerBase{
-			action:       "Update",
-			resourceName: "ConfigMap/streaming-couchdb-configmap",
+			action:       "update",
+			resourceName: "default/streaming-couchdb-configmap",
 		},
 	}
 	handlers = append(handlers, printlnHandler)
