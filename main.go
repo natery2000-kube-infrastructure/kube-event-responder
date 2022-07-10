@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	api_v1 "k8s.io/api/core/v1"
@@ -46,10 +47,10 @@ func main() {
 	informer := cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options meta_v1.ListOptions) (runtime.Object, error) {
-				return kubeClient.CoreV1().ConfigMaps(conf.Namespace).List(nil, options)
+				return kubeClient.CoreV1().ConfigMaps(conf.Namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options meta_v1.ListOptions) (watch.Interface, error) {
-				return kubeClient.CoreV1().ConfigMaps(conf.Namespace).Watch(nil, options)
+				return kubeClient.CoreV1().ConfigMaps(conf.Namespace).Watch(context.TODO(), options)
 			},
 		},
 		&api_v1.ConfigMap{},
