@@ -10,6 +10,7 @@ import (
 	api_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -37,7 +38,7 @@ func main() {
 		command: "kubectl get pods",
 		HandlerBase: HandlerBase{
 			action:       "Update",
-			resourceName: "Deployment/streaming-ui-deployment",
+			resourceName: "ConfigMap/streaming-couchdb-configmap",
 		},
 	}
 	handlers = append(handlers, kubectlCommandHandler)
@@ -46,7 +47,7 @@ func main() {
 		printString: "hello world",
 		HandlerBase: HandlerBase{
 			action:       "Update",
-			resourceName: "Deployment/streaming-ui-deployment",
+			resourceName: "ConfigMap/streaming-couchdb-configmap",
 		},
 	}
 	handlers = append(handlers, printlnHandler)
@@ -64,6 +65,9 @@ func main() {
 	//if conf.Resource == "ConfigMap" {
 	informer := cache.NewSharedIndexInformer(
 		&cache.ListWatch{
+			ListFunc: func(options meta_v1.ListOptions) (runtime.Object, error) {
+				return kubeClient.CoreV1().ConfigMaps(conf.Namespace).List(context.TODO(), options)
+			},
 			WatchFunc: func(options meta_v1.ListOptions) (watch.Interface, error) {
 				return kubeClient.CoreV1().ConfigMaps(conf.Namespace).Watch(context.TODO(), options)
 			},
@@ -106,8 +110,8 @@ func main() {
 
 func worker(eventChan <-chan Event, handlers []Handler) {
 	for event := range eventChan {
+		fmt.Println("event receieved", event)
 		for _, handler := range handlers {
-			fmt.Println("event receieved", event)
 			handler.Handle(event)
 		}
 	}
