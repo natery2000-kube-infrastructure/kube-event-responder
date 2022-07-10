@@ -31,7 +31,7 @@ type Event struct {
 }
 
 func main() {
-	var conf Config
+	conf := Config{Namespace: "default"}
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
