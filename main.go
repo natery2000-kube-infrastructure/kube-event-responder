@@ -101,11 +101,13 @@ func main() {
 		},
 	})
 
-	go worker(eventChan, handlers)
-
 	stopCh := make(chan struct{})
 	defer close(stopCh)
-	informer.Run(stopCh)
+	go informer.Run(stopCh)
+
+	cache.WaitForCacheSync(stopCh)
+
+	worker(eventChan, handlers)
 }
 
 func worker(eventChan <-chan Event, handlers []Handler) {
