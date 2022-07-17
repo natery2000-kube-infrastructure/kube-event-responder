@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -77,7 +78,8 @@ func main() {
 	for {
 		event := <-ch
 		configMap, _ := event.Object.(*api_v1.ConfigMap)
-		fmt.Println(configMap)
+		jsonConfig, _ := json.Marshal(configMap)
+		fmt.Println(string(jsonConfig))
 	}
 
 	// informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
