@@ -27,6 +27,7 @@ type Event struct {
 	resourceName string
 	action       string
 	resourceType string
+	raw          interface{}
 }
 
 func main() {
@@ -83,6 +84,7 @@ func main() {
 			newEvent.resourceName, err = cache.MetaNamespaceKeyFunc(obj)
 			newEvent.action = "create"
 			newEvent.resourceType = "configMap"
+			newEvent.raw = obj
 			eventChan <- newEvent
 		},
 		UpdateFunc: func(old, new interface{}) {
@@ -90,6 +92,7 @@ func main() {
 			newEvent.resourceName, err = cache.MetaNamespaceKeyFunc(old)
 			newEvent.action = "update"
 			newEvent.resourceType = "configMap"
+			newEvent.raw = new
 			eventChan <- newEvent
 		},
 		DeleteFunc: func(obj interface{}) {
@@ -97,6 +100,7 @@ func main() {
 			newEvent.resourceName, err = cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 			newEvent.action = "delete"
 			newEvent.resourceType = "configMap"
+			newEvent.raw = obj
 			eventChan <- newEvent
 		},
 	})
