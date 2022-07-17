@@ -105,8 +105,9 @@ func main() {
 	defer close(stopCh)
 	go informer.Run(stopCh)
 
-	cache.WaitForCacheSync(stopCh)
+	cache.WaitForCacheSync(stopCh, informer.HasSynced)
 
+	fmt.Println("starting listening")
 	worker(eventChan, handlers)
 }
 
