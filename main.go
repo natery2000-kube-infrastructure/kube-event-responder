@@ -14,11 +14,8 @@ import (
 	rbac_v1beta1 "k8s.io/api/rbac/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
 )
 
 type Config struct {
@@ -37,7 +34,7 @@ type Event struct {
 
 func main() {
 	conf := Config{Namespace: "default"}
-	eventChan := make(chan Event)
+	//eventChan := make(chan Event)
 	var handlers []Handler
 
 	kubectlCommandHandler := KubectlCommandHandler{
@@ -68,65 +65,65 @@ func main() {
 		fmt.Println(err)
 	}
 
-	//if conf.Resource == "ConfigMap" {
-	informer := cache.NewSharedIndexInformer(
-		&cache.ListWatch{
-			ListFunc: func(options meta_v1.ListOptions) (runtime.Object, error) {
-				return kubeClient.CoreV1().ConfigMaps(conf.Namespace).List(context.TODO(), options)
-			},
-			WatchFunc: func(options meta_v1.ListOptions) (watch.Interface, error) {
-				return kubeClient.CoreV1().ConfigMaps(conf.Namespace).Watch(context.TODO(), options)
-			},
-		},
-		&api_v1.ConfigMap{},
-		0, //Skip resync
-		cache.Indexers{},
-	)
+	var api = kubeClient.CoreV1().ConfigMaps(conf.Namespace)
+	configMaps, err := api.List(context.TODO(), meta_v1.ListOptions{})
 
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			var newEvent Event
-			newEvent.key, err = cache.MetaNamespaceKeyFunc(obj)
-			kubeobj, _, _ := informer.GetIndexer().GetByKey(newEvent.key)
-			objectMeta := GetObjectMetaData(kubeobj)
-			newEvent.resourceName, err = cache.MetaNamespaceKeyFunc(obj)
-			newEvent.action = "create"
-			newEvent.resourceType = "configMap"
-			newEvent.raw = objectMeta
-			eventChan <- newEvent
-		},
-		UpdateFunc: func(old, new interface{}) {
-			var newEvent Event
-			newEvent.key, err = cache.MetaNamespaceKeyFunc(new)
-			kubeobj, _, _ := informer.GetIndexer().GetByKey(newEvent.key)
-			objectMeta := GetObjectMetaData(kubeobj)
-			newEvent.resourceName, err = cache.MetaNamespaceKeyFunc(new)
-			newEvent.action = "update"
-			newEvent.resourceType = "configMap"
-			newEvent.raw = objectMeta
-			eventChan <- newEvent
-		},
-		DeleteFunc: func(obj interface{}) {
-			var newEvent Event
-			newEvent.key, err = cache.MetaNamespaceKeyFunc(obj)
-			kubeobj, _, _ := informer.GetIndexer().GetByKey(newEvent.key)
-			objectMeta := GetObjectMetaData(kubeobj)
-			newEvent.resourceName, err = cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
-			newEvent.action = "delete"
-			newEvent.resourceType = "configMap"
-			newEvent.raw = objectMeta
-			eventChan <- newEvent
-		},
-	})
+	resourceVersion := configMaps.ListMeta.ResourceVersion
 
-	stopCh := make(chan struct{})
-	defer close(stopCh)
-	go informer.Run(stopCh)
+	watcher, err := api.Watch(context.TODO(), meta_v1.ListOptions{ResourceVersion: resourceVersion})
 
-	cache.WaitForCacheSync(stopCh, informer.HasSynced)
+	ch := watcher.ResultChan()
 
-	fmt.Println("starting listening")
-	worker(eventChan, handlers)
+	for {
+		event := <-ch
+		configMap, _ := event.Object.(*api_v1.ConfigMap)
+		fmt.Println(configMap)
+	}
+
+	// informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	// 	AddFunc: func(obj interface{}) {
+	// 		var newEvent Event
+	// 		newEvent.key, err = cache.MetaNamespaceKeyFunc(obj)
+	// 		kubeobj, _, _ := informer.GetIndexer().GetByKey(newEvent.key)
+	// 		objectMeta := GetObjectMetaData(kubeobj)
+	// 		newEvent.resourceName, err = cache.MetaNamespaceKeyFunc(obj)
+	// 		newEvent.action = "create"
+	// 		newEvent.resourceType = "configMap"
+	// 		newEvent.raw = objectMeta
+	// 		eventChan <- newEvent
+	// 	},
+	// 	UpdateFunc: func(old, new interface{}) {
+	// 		var newEvent Event
+	// 		newEvent.key, err = cache.MetaNamespaceKeyFunc(new)
+	// 		kubeobj, _, _ := informer.GetIndexer().GetByKey(newEvent.key)
+	// 		objectMeta := GetObjectMetaData(kubeobj)
+	// 		newEvent.resourceName, err = cache.MetaNamespaceKeyFunc(new)
+	// 		newEvent.action = "update"
+	// 		newEvent.resourceType = "configMap"
+	// 		newEvent.raw = objectMeta
+	// 		eventChan <- newEvent
+	// 	},
+	// 	DeleteFunc: func(obj interface{}) {
+	// 		var newEvent Event
+	// 		newEvent.key, err = cache.MetaNamespaceKeyFunc(obj)
+	// 		kubeobj, _, _ := informer.GetIndexer().GetByKey(newEvent.key)
+	// 		objectMeta := GetObjectMetaData(kubeobj)
+	// 		newEvent.resourceName, err = cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+	// 		newEvent.action = "delete"
+	// 		newEvent.resourceType = "configMap"
+	// 		newEvent.raw = objectMeta
+	// 		eventChan <- newEvent
+	// 	},
+	// })
+
+	// stopCh := make(chan struct{})
+	// defer close(stopCh)
+	// go informer.Run(stopCh)
+
+	// cache.WaitForCacheSync(stopCh, informer.HasSynced)
+
+	// fmt.Println("starting listening")
+	// worker(eventChan, handlers)
 }
 
 func worker(eventChan <-chan Event, handlers []Handler) {
