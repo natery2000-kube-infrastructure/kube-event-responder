@@ -28,6 +28,7 @@ type Config struct {
 }
 
 type Event struct {
+	key          string
 	resourceName string
 	action       string
 	resourceType string
@@ -85,7 +86,9 @@ func main() {
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			var newEvent Event
-			objectMeta := GetObjectMetaData(obj)
+			newEvent.key, err = cache.MetaNamespaceKeyFunc(obj)
+			kubeobj, _, _ := informer.GetIndexer().GetByKey(newEvent.key)
+			objectMeta := GetObjectMetaData(kubeobj)
 			newEvent.resourceName, err = cache.MetaNamespaceKeyFunc(obj)
 			newEvent.action = "create"
 			newEvent.resourceType = "configMap"
@@ -94,8 +97,10 @@ func main() {
 		},
 		UpdateFunc: func(old, new interface{}) {
 			var newEvent Event
-			objectMeta := GetObjectMetaData(old)
-			newEvent.resourceName, err = cache.MetaNamespaceKeyFunc(old)
+			newEvent.key, err = cache.MetaNamespaceKeyFunc(new)
+			kubeobj, _, _ := informer.GetIndexer().GetByKey(newEvent.key)
+			objectMeta := GetObjectMetaData(kubeobj)
+			newEvent.resourceName, err = cache.MetaNamespaceKeyFunc(new)
 			newEvent.action = "update"
 			newEvent.resourceType = "configMap"
 			newEvent.raw = objectMeta
@@ -103,7 +108,9 @@ func main() {
 		},
 		DeleteFunc: func(obj interface{}) {
 			var newEvent Event
-			objectMeta := GetObjectMetaData(obj)
+			newEvent.key, err = cache.MetaNamespaceKeyFunc(obj)
+			kubeobj, _, _ := informer.GetIndexer().GetByKey(newEvent.key)
+			objectMeta := GetObjectMetaData(kubeobj)
 			newEvent.resourceName, err = cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 			newEvent.action = "delete"
 			newEvent.resourceType = "configMap"
