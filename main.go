@@ -68,10 +68,16 @@ func main() {
 
 	var api = kubeClient.CoreV1().ConfigMaps(conf.Namespace)
 	configMaps, err := api.List(context.TODO(), meta_v1.ListOptions{})
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	resourceVersion := configMaps.ListMeta.ResourceVersion
 
 	watcher, err := api.Watch(context.TODO(), meta_v1.ListOptions{ResourceVersion: resourceVersion})
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	ch := watcher.ResultChan()
 
