@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"strings"
@@ -59,6 +60,13 @@ func main() {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		fmt.Println(err)
+		config = &rest.Config{
+			Host: "https://" + net.JoinHostPort(os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")),
+			TLSClientConfig: rest.TLSClientConfig{
+				Insecure: true,
+			},
+			BearerToken: "eyJhbGciOiJSUzI1NiIsImtpZCI6IlFhVUY4aFJ4M002NTQ4SWxRc3drS3pWUGtFc2FFVXJWX0JpbUMyZW1scWsifQ.eyJhdWQiOlsiaHR0cHM6Ly9rdWJlcm5ldGVzLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWwiXSwiZXhwIjoxNjU4NjA2MTUzLCJpYXQiOjE2NTg2MDI1NTMsImlzcyI6Imh0dHBzOi8va3ViZXJuZXRlcy5kZWZhdWx0LnN2Yy5jbHVzdGVyLmxvY2FsIiwia3ViZXJuZXRlcy5pbyI6eyJuYW1lc3BhY2UiOiJkZWZhdWx0Iiwic2VydmljZWFjY291bnQiOnsibmFtZSI6Imt1YmUtZXZlbnQtcmVzcG9uZGVyLXNlcnZpY2VhY2NvdW50IiwidWlkIjoiOTdjZTAxOGQtMDM4Ni00NDRkLThiYjAtMWM0MDMxM2YwMzk3In19LCJuYmYiOjE2NTg2MDI1NTMsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0Omt1YmUtZXZlbnQtcmVzcG9uZGVyLXNlcnZpY2VhY2NvdW50In0.TP1AGuRQWUm0HBrMDRQxjZdCxsbu6XcybgP0UtoMJCzUS46p13i3khjJVBw5kjEPxRjJTqm3cp4q0eYiDEP0B-WXEpcnvfZRK0zzCHB10jl2C5f1gMHl4jUpRPo7MMrOFI6P6EGR5H3uPhuMUtUaSnkvQMXe54AwlSoQH9MihzOAwUu1nvMCputJXbXDuTAdnsjq-Znadzr-UqfFEiUiAc1pqI187bhM8NuzL25yQln7_JGuYf77wt5M79l6Mq0XuZUaARU0l_Wz4aJEcAzEew6eGUU13o4YZKRLnJlcRVNaDP2vCabcQqDU_a0RpeepRLWXylpZxSZfLTHRUgT_Lg",
+		}
 	}
 
 	kubeClient, err := kubernetes.NewForConfig(config)
@@ -81,6 +89,7 @@ func main() {
 
 	ch := watcher.ResultChan()
 
+	fmt.Println("starting listen")
 	for {
 		event := <-ch
 		configMap, _ := event.Object.(*api_v1.ConfigMap)
