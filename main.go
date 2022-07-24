@@ -98,7 +98,7 @@ func main() {
 		event := <-ch
 		configMap, err := event.Object.(*api_v1.ConfigMap)
 		if err {
-			fmt.Println("failed to cast configmap")
+			fmt.Println("failed to cast configmap", event, configMap)
 			break
 		}
 		jsonConfig, error := json.Marshal(configMap)
