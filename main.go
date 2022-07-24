@@ -96,8 +96,16 @@ func main() {
 			break
 		}
 		event := <-ch
-		configMap, _ := event.Object.(*api_v1.ConfigMap)
-		jsonConfig, _ := json.Marshal(configMap)
+		configMap, err := event.Object.(*api_v1.ConfigMap)
+		if err {
+			fmt.Println("failed to cast configmap")
+			break
+		}
+		jsonConfig, error := json.Marshal(configMap)
+		if error != nil {
+			fmt.Println("failed to marshal object", error)
+			break
+		}
 		fmt.Println(string(jsonConfig))
 	}
 
