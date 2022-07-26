@@ -16,6 +16,7 @@ import (
 	ext_v1beta1 "k8s.io/api/extensions/v1beta1"
 	rbac_v1beta1 "k8s.io/api/rbac/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -97,21 +98,18 @@ func main() {
 			break
 		}
 		event := <-ch
-		var eventInterface interface{} = event
-		if isNil(eventInterface) {
+		if event == (watch.Event{}) {
 			fmt.Println("event is empty")
 		}
 		configMap, err := event.Object.(*api_v1.ConfigMap)
-		var configMapInterface interface{} = configMap
-		if isNil(configMapInterface) {
+		if configMap == nil {
 			fmt.Println("configMap is empty")
 		}
 		if err {
 			fmt.Println("err", err)
 		}
 		jsonConfig, error := json.Marshal(configMap)
-		var jsonConfigInterface interface{} = jsonConfig
-		if isNil(jsonConfigInterface) {
+		if jsonConfig == nil {
 			fmt.Println("jsonConfig is empty")
 		}
 		if error != nil {
