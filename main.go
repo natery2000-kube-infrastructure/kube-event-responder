@@ -77,45 +77,48 @@ func main() {
 	}
 
 	var api = kubeClient.CoreV1().ConfigMaps(conf.Namespace)
-	configMaps, err := api.List(context.TODO(), meta_v1.ListOptions{})
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	resourceVersion := configMaps.ListMeta.ResourceVersion
-
-	watcher, err := api.Watch(context.TODO(), meta_v1.ListOptions{ResourceVersion: resourceVersion})
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	ch := watcher.ResultChan()
-
-	fmt.Println("starting listen")
 	for {
-		if ch == nil {
-			fmt.Println("channel was closed")
-			break
+		configMaps, err := api.List(context.TODO(), meta_v1.ListOptions{})
+		if err != nil {
+			fmt.Println(err)
 		}
-		event := <-ch
-		if event == (watch.Event{}) {
-			fmt.Println("event is empty")
+
+		resourceVersion := configMaps.ListMeta.ResourceVersion
+
+		watcher, err := api.Watch(context.TODO(), meta_v1.ListOptions{ResourceVersion: resourceVersion})
+		if err != nil {
+			fmt.Println(err)
 		}
-		configMap, err := event.Object.(*api_v1.ConfigMap)
-		if configMap == nil {
-			fmt.Println("configMap is empty")
+
+		ch := watcher.ResultChan()
+
+		fmt.Println("starting listen")
+		for {
+			if ch == nil {
+				fmt.Println("channel was closed")
+				break
+			}
+			event := <-ch
+			if event == (watch.Event{}) {
+				fmt.Println("event is empty")
+			}
+			configMap, err := event.Object.(*api_v1.ConfigMap)
+			if configMap == nil {
+				fmt.Println("configMap is empty")
+				break
+			}
+			if err {
+				fmt.Println("err", err)
+			}
+			jsonConfig, error := json.Marshal(configMap)
+			if jsonConfig == nil {
+				fmt.Println("jsonConfig is empty")
+			}
+			if error != nil {
+				fmt.Println("failed to marshal object", error)
+			}
+			fmt.Println(string(jsonConfig))
 		}
-		if err {
-			fmt.Println("err", err)
-		}
-		jsonConfig, error := json.Marshal(configMap)
-		if jsonConfig == nil {
-			fmt.Println("jsonConfig is empty")
-		}
-		if error != nil {
-			fmt.Println("failed to marshal object", error)
-		}
-		fmt.Println(string(jsonConfig))
 	}
 
 	// informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
