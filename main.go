@@ -119,6 +119,7 @@ func main() {
 			}
 			fmt.Println(string(jsonConfig))
 		}
+		fmt.Println("restarting")
 	}
 
 	// informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
