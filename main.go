@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
 
 	apps_v1 "k8s.io/api/apps/v1"
@@ -96,11 +97,22 @@ func main() {
 			break
 		}
 		event := <-ch
-		configMap, _ := event.Object.(*api_v1.ConfigMap)
+		if isNil(event) {
+			fmt.Println("event is empty")
+		}
+		configMap, err := event.Object.(*api_v1.ConfigMap)
+		if isNil(configMap) {
+			fmt.Println("configMap is empty")
+		}
+		if err {
+			fmt.Println("err", err)
+		}
 		jsonConfig, error := json.Marshal(configMap)
+		if isNil(jsonConfig) {
+			fmt.Println("jsonConfig is empty")
+		}
 		if error != nil {
 			fmt.Println("failed to marshal object", error)
-			break
 		}
 		fmt.Println(string(jsonConfig))
 	}
@@ -149,6 +161,10 @@ func main() {
 
 	// fmt.Println("starting listening")
 	// worker(eventChan, handlers)
+}
+
+func isNil(i interface{}) bool {
+	return i == nil || reflect.ValueOf(i).IsNil()
 }
 
 func worker(eventChan <-chan Event, handlers []Handler) {
