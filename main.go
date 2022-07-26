@@ -97,18 +97,21 @@ func main() {
 			break
 		}
 		event := <-ch
-		if isNil(event) {
+		var eventInterface interface{} = event
+		if isNil(eventInterface) {
 			fmt.Println("event is empty")
 		}
 		configMap, err := event.Object.(*api_v1.ConfigMap)
-		if isNil(configMap) {
+		var configMapInterface interface{} = configMap
+		if isNil(configMapInterface) {
 			fmt.Println("configMap is empty")
 		}
 		if err {
 			fmt.Println("err", err)
 		}
 		jsonConfig, error := json.Marshal(configMap)
-		if isNil(jsonConfig) {
+		var jsonConfigInterface interface{} = jsonConfig
+		if isNil(jsonConfigInterface) {
 			fmt.Println("jsonConfig is empty")
 		}
 		if error != nil {
