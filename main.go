@@ -211,9 +211,9 @@ func getEvent(event watch.Event) Event {
 }
 
 func getHandlers() (handlers []Handler) {
-	data, err := os.ReadFile("/config/config.json")
+	data, err := os.ReadFile("/config/handlers.json")
 	if err != nil {
-		fmt.Println("error reading /config/config.json")
+		fmt.Println("error reading /config/handlers.json")
 	}
 
 	fmt.Println(data)
