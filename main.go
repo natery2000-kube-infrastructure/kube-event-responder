@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -216,7 +217,9 @@ func getHandlers() (handlers []Handler) {
 		fmt.Println("error reading /config/handlers.json")
 	}
 
-	fmt.Println(data)
+	var handlerConfigs []handlerConfig
+	json.Unmarshal([]byte(data), &handlerConfigs)
+	fmt.Println(handlerConfigs)
 
 	kubectlCommandHandler := KubectlCommandHandler{
 		command: "kubectl get pods",
@@ -236,4 +239,8 @@ func getHandlers() (handlers []Handler) {
 	}
 	handlers = append(handlers, printlnHandler)
 	return handlers
+}
+
+type handlerConfig struct {
+	handlerType string
 }
