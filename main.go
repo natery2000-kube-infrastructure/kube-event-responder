@@ -219,7 +219,7 @@ func getHandlers() (handlers []Handler) {
 
 	var handlerConfigs []handlerConfig
 	json.Unmarshal([]byte(data), &handlerConfigs)
-	fmt.Println(handlerConfigs)
+	fmt.Println(handlerConfigs, handlerConfigs[0].handlerType)
 
 	kubectlCommandHandler := KubectlCommandHandler{
 		command: "kubectl get pods",
