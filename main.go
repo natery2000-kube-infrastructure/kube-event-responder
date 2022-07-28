@@ -217,11 +217,11 @@ func getHandlers() (handlers []Handler) {
 		fmt.Println("error reading /config/handlers.json")
 	}
 
-	var handlerConfigs []handlerConfig
-	json.Unmarshal([]byte(data), &handlerConfigs)
-	fmt.Println(handlerConfigs, handlerConfigs[0].handlerType)
+	handlerMainConfig := handlerMainConfig{}
+	json.Unmarshal([]byte(data), &handlerMainConfig)
+	fmt.Println(handlerMainConfig, handlerMainConfig.handlers[0].handlerType)
 
-	for _, handlerConfig := range handlerConfigs {
+	for _, handlerConfig := range handlerMainConfig.handlers {
 		switch handlerConfig.handlerType {
 		case "KubectlCommandHandler":
 			kubectlCommandHandler := KubectlCommandHandler{
@@ -244,6 +244,10 @@ func getHandlers() (handlers []Handler) {
 		}
 	}
 	return handlers
+}
+
+type handlerMainConfig struct {
+	handlers []handlerConfig
 }
 
 type handlerConfig struct {
