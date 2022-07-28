@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
-	"reflect"
 	"strings"
 
 	apps_v1 "k8s.io/api/apps/v1"
@@ -16,6 +14,7 @@ import (
 	ext_v1beta1 "k8s.io/api/extensions/v1beta1"
 	rbac_v1beta1 "k8s.io/api/rbac/v1beta1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 
 	"k8s.io/client-go/kubernetes"
@@ -38,14 +37,14 @@ type Event struct {
 
 func main() {
 	conf := Config{Namespace: "default"}
-	//eventChan := make(chan Event)
+	eventChan := make(chan Event)
 	var handlers []Handler
 
 	kubectlCommandHandler := KubectlCommandHandler{
 		command: "kubectl get pods",
 		HandlerBase: HandlerBase{
-			action:       "update",
-			resourceName: "default/streaming-couchdb-configmap",
+			action:       "MODIFIED",
+			resourceName: "streaming-couchdb-configmap",
 		},
 	}
 	handlers = append(handlers, kubectlCommandHandler)
@@ -53,8 +52,8 @@ func main() {
 	printlnHandler := PrintlnHandler{
 		printString: "hello world",
 		HandlerBase: HandlerBase{
-			action:       "update",
-			resourceName: "default/streaming-couchdb-configmap",
+			action:       "MODIFIED",
+			resourceName: "streaming-couchdb-configmap",
 		},
 	}
 	handlers = append(handlers, printlnHandler)
@@ -75,6 +74,8 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	go worker(eventChan, handlers)
 
 	var api = kubeClient.CoreV1().ConfigMaps(conf.Namespace)
 	for {
@@ -102,74 +103,21 @@ func main() {
 			if event == (watch.Event{}) {
 				fmt.Println("event is empty")
 			}
-			configMap, err := event.Object.(*api_v1.ConfigMap)
-			if configMap == nil {
-				fmt.Println("configMap is empty")
+
+			newEvent := getEvent(event)
+			if newEvent == (Event{}) {
+				fmt.Println("channel ended or failed to find event type")
 				break
 			}
-			if err {
-				fmt.Println("err", err)
-			}
-			jsonConfig, error := json.Marshal(configMap)
-			if jsonConfig == nil {
-				fmt.Println("jsonConfig is empty")
-			}
-			if error != nil {
-				fmt.Println("failed to marshal object", error)
-			}
-			fmt.Println(string(jsonConfig))
+			eventChan <- newEvent
 		}
 		fmt.Println("restarting")
 	}
-
-	// informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-	// 	AddFunc: func(obj interface{}) {
-	// 		var newEvent Event
-	// 		newEvent.key, err = cache.MetaNamespaceKeyFunc(obj)
-	// 		kubeobj, _, _ := informer.GetIndexer().GetByKey(newEvent.key)
-	// 		objectMeta := GetObjectMetaData(kubeobj)
-	// 		newEvent.resourceName, err = cache.MetaNamespaceKeyFunc(obj)
-	// 		newEvent.action = "create"
-	// 		newEvent.resourceType = "configMap"
-	// 		newEvent.raw = objectMeta
-	// 		eventChan <- newEvent
-	// 	},
-	// 	UpdateFunc: func(old, new interface{}) {
-	// 		var newEvent Event
-	// 		newEvent.key, err = cache.MetaNamespaceKeyFunc(new)
-	// 		kubeobj, _, _ := informer.GetIndexer().GetByKey(newEvent.key)
-	// 		objectMeta := GetObjectMetaData(kubeobj)
-	// 		newEvent.resourceName, err = cache.MetaNamespaceKeyFunc(new)
-	// 		newEvent.action = "update"
-	// 		newEvent.resourceType = "configMap"
-	// 		newEvent.raw = objectMeta
-	// 		eventChan <- newEvent
-	// 	},
-	// 	DeleteFunc: func(obj interface{}) {
-	// 		var newEvent Event
-	// 		newEvent.key, err = cache.MetaNamespaceKeyFunc(obj)
-	// 		kubeobj, _, _ := informer.GetIndexer().GetByKey(newEvent.key)
-	// 		objectMeta := GetObjectMetaData(kubeobj)
-	// 		newEvent.resourceName, err = cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
-	// 		newEvent.action = "delete"
-	// 		newEvent.resourceType = "configMap"
-	// 		newEvent.raw = objectMeta
-	// 		eventChan <- newEvent
-	// 	},
-	// })
-
-	// stopCh := make(chan struct{})
-	// defer close(stopCh)
-	// go informer.Run(stopCh)
-
-	// cache.WaitForCacheSync(stopCh, informer.HasSynced)
-
-	// fmt.Println("starting listening")
-	// worker(eventChan, handlers)
 }
 
-func isNil(i interface{}) bool {
-	return i == nil || reflect.ValueOf(i).IsNil()
+type KubeEvent struct {
+	Type   watch.EventType
+	Object runtime.Object
 }
 
 func worker(eventChan <-chan Event, handlers []Handler) {
@@ -259,6 +207,22 @@ func GetObjectMetaData(obj interface{}) (objectMeta meta_v1.ObjectMeta) {
 		objectMeta = object.ObjectMeta
 	case *api_v1.Event:
 		objectMeta = object.ObjectMeta
+	case *api_v1.ConfigMap:
+		objectMeta = object.ObjectMeta
 	}
 	return objectMeta
+}
+
+func getEvent(event watch.Event) Event {
+	objectMetadata := GetObjectMetaData(event.Object)
+	if objectMetadata.Name == "" {
+		return Event{}
+	}
+	var newEvent Event
+	newEvent.key = (string)(objectMetadata.UID)
+	newEvent.resourceName = objectMetadata.Name
+	newEvent.action = (string)(event.Type)
+	newEvent.raw = event
+
+	return newEvent
 }
