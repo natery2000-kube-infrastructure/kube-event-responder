@@ -221,26 +221,34 @@ func getHandlers() (handlers []Handler) {
 	json.Unmarshal([]byte(data), &handlerConfigs)
 	fmt.Println(handlerConfigs, handlerConfigs[0].handlerType)
 
-	kubectlCommandHandler := KubectlCommandHandler{
-		command: "kubectl get pods",
-		HandlerBase: HandlerBase{
-			action:       "MODIFIED",
-			resourceName: "streaming-couchdb-configmap",
-		},
+	for _, handlerConfig := range handlerConfigs {
+		switch handlerConfig.handlerType {
+		case "KubectlCommandHandler":
+			kubectlCommandHandler := KubectlCommandHandler{
+				command: handlerConfig.options,
+				HandlerBase: HandlerBase{
+					action:       handlerConfig.action,
+					resourceName: handlerConfig.resourceName,
+				},
+			}
+			handlers = append(handlers, kubectlCommandHandler)
+		case "PrintlnHandler":
+			printlnHandler := PrintlnHandler{
+				printString: handlerConfig.options,
+				HandlerBase: HandlerBase{
+					action:       handlerConfig.action,
+					resourceName: handlerConfig.resourceName,
+				},
+			}
+			handlers = append(handlers, printlnHandler)
+		}
 	}
-	handlers = append(handlers, kubectlCommandHandler)
-
-	printlnHandler := PrintlnHandler{
-		printString: "hello world",
-		HandlerBase: HandlerBase{
-			action:       "MODIFIED",
-			resourceName: "streaming-couchdb-configmap",
-		},
-	}
-	handlers = append(handlers, printlnHandler)
 	return handlers
 }
 
 type handlerConfig struct {
-	handlerType string
+	handlerType  string
+	options      string
+	action       string
+	resourceName string
 }
