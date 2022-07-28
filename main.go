@@ -22,7 +22,6 @@ import (
 )
 
 type Config struct {
-	//Handler Handler
 	Resource  string
 	Namespace string
 }
@@ -40,23 +39,7 @@ func main() {
 	eventChan := make(chan Event)
 	var handlers []Handler
 
-	kubectlCommandHandler := KubectlCommandHandler{
-		command: "kubectl get pods",
-		HandlerBase: HandlerBase{
-			action:       "MODIFIED",
-			resourceName: "streaming-couchdb-configmap",
-		},
-	}
-	handlers = append(handlers, kubectlCommandHandler)
-
-	printlnHandler := PrintlnHandler{
-		printString: "hello world",
-		HandlerBase: HandlerBase{
-			action:       "MODIFIED",
-			resourceName: "streaming-couchdb-configmap",
-		},
-	}
-	handlers = append(handlers, printlnHandler)
+	handlers = getHandlers()
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -225,4 +208,32 @@ func getEvent(event watch.Event) Event {
 	newEvent.raw = event
 
 	return newEvent
+}
+
+func getHandlers() (handlers []Handler) {
+	data, err := os.ReadFile("/config/config.json")
+	if err != nil {
+		fmt.Println("error reading /config/config.json")
+	}
+
+	fmt.Println(data)
+
+	kubectlCommandHandler := KubectlCommandHandler{
+		command: "kubectl get pods",
+		HandlerBase: HandlerBase{
+			action:       "MODIFIED",
+			resourceName: "streaming-couchdb-configmap",
+		},
+	}
+	handlers = append(handlers, kubectlCommandHandler)
+
+	printlnHandler := PrintlnHandler{
+		printString: "hello world",
+		HandlerBase: HandlerBase{
+			action:       "MODIFIED",
+			resourceName: "streaming-couchdb-configmap",
+		},
+	}
+	handlers = append(handlers, printlnHandler)
+	return handlers
 }
