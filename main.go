@@ -219,25 +219,25 @@ func getHandlers() (handlers []Handler) {
 
 	handlerMainConfig := handlerMainConfig{}
 	json.Unmarshal([]byte(data), &handlerMainConfig)
-	fmt.Println(handlerMainConfig, handlerMainConfig.handlers[0].handlerType)
+	fmt.Println(handlerMainConfig, handlerMainConfig.Handlers[0].HandlerType)
 
-	for _, handlerConfig := range handlerMainConfig.handlers {
-		switch handlerConfig.handlerType {
+	for _, handlerConfig := range handlerMainConfig.Handlers {
+		switch handlerConfig.HandlerType {
 		case "KubectlCommandHandler":
 			kubectlCommandHandler := KubectlCommandHandler{
-				command: handlerConfig.options,
+				command: handlerConfig.Options,
 				HandlerBase: HandlerBase{
-					action:       handlerConfig.action,
-					resourceName: handlerConfig.resourceName,
+					action:       handlerConfig.Action,
+					resourceName: handlerConfig.ResourceName,
 				},
 			}
 			handlers = append(handlers, kubectlCommandHandler)
 		case "PrintlnHandler":
 			printlnHandler := PrintlnHandler{
-				printString: handlerConfig.options,
+				printString: handlerConfig.Options,
 				HandlerBase: HandlerBase{
-					action:       handlerConfig.action,
-					resourceName: handlerConfig.resourceName,
+					action:       handlerConfig.Action,
+					resourceName: handlerConfig.ResourceName,
 				},
 			}
 			handlers = append(handlers, printlnHandler)
@@ -247,12 +247,12 @@ func getHandlers() (handlers []Handler) {
 }
 
 type handlerMainConfig struct {
-	handlers []handlerConfig
+	Handlers []handlerConfig `json:"handlers"`
 }
 
 type handlerConfig struct {
-	handlerType  string
-	options      string
-	action       string
-	resourceName string
+	HandlerType  string `json:"handlerType"`
+	Options      string `json:"options`
+	Action       string `json:"action"`
+	ResourceName string `json:"resourceName"`
 }
